@@ -101,9 +101,9 @@ class PermisoGuard extends Guard {
      */
     private function checkItem($item, $type = 'roles')
     {
-        if ( ! is_array($this->roles) || ! is_array($this->permissions)){
-            $this->loadRolesAndPermissions();
-        }
+        
+        $this->loadRolesAndPermissions();
+   
 
         if (is_string($item) && strpos($item, ',') !== false) {
             $item = preg_split('/,/', $item);
@@ -131,7 +131,8 @@ class PermisoGuard extends Guard {
 
         return array_search($item, $this->{$type}) !== false;
     }
-
+    
+    
     /**
      * Load permissions from session or if it is empty, load from database.
      *
@@ -139,36 +140,32 @@ class PermisoGuard extends Guard {
      */
     private function loadRolesAndPermissions()
     {
-        if ($this->session->has('roles') && $this->session->has('permissions')) {
-            $this->roles = $this->session->get('roles');
-            $this->permissions = $this->session->get('permissions');
-        } else {
-            $this->permissions = [];
-
-            $user = $this->user()->load('roles.permissions');
-
-            $this->roles = $user->roles->lists('name');
             
+            $this->permissions = [];
+            
+            $user = $this->user();
+            $this->roles = $user->roles->lists('name');
             if($this->roles instanceof \Illuminate\Database\Eloquent\Collection){
                 $this->roles = $this->roles->toArray();
             }
-
-            $user->roles->each(function($role)
+            
+            $role_id = $this->user()->roles[0]->id;
+        
+            $permissions =  \DB::table('role_permission')
+                ->join('permissions', 'role_permission.permission_id', '=', 'permissions.id')
+                //->join('orders', 'users.id', '=', 'orders.user_id')
+                ->select('permissions.name')
+                    ->where('role_id', $role_id)
+                ->get('name');
+            $permissions_array = [];
+            foreach($permissions as $permission)
             {
-                $p = $role->permissions->lists('name');
-                
-                if($p instanceof \Illuminate\Database\Eloquent\Collection) {
-                    $p = $p->toArray();
-                }
-                
-                $this->permissions = array_merge($this->permissions, $p);
-            });
+                array_push($permissions_array,$permission->name);
 
-            $this->session->put([
-                'roles' => $this->roles,
-                'permissions' => $this->permissions
-            ]);
-        }
+            };
+            
+            $this->permissions = $permissions_array;
+        
     }
 
     /**
