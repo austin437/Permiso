@@ -102,8 +102,7 @@ class PermisoGuard extends Guard {
     private function checkItem($item, $type = 'roles')
     {
         
-        $this->loadRolesAndPermissions();
-   
+        $this->loadRolesAndPermissions();   
 
         if (is_string($item) && strpos($item, ',') !== false) {
             $item = preg_split('/,/', $item);
