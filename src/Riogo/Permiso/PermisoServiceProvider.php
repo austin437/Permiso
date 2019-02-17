@@ -33,7 +33,7 @@ class PermisoServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		$this->app->singleton('command.permiso.migration', function ($app) {
+		$this->app->bindShared('command.permiso.migration', function ($app) {
 			return new MigrationCommand();
 		});
 
